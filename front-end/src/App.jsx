@@ -34,10 +34,10 @@ function App() {
     }
   };
 
-  const getScoreDisplay = (ml_score) => {
-    if (!ml_score) return { percent: 0, text: 'Unknown', color: '#737685', bg: '#7376851a' };
-    const fakeProb = ml_score.fake_probability || 0;
-    const realProb = 100 - fakeProb;
+  const getScoreDisplay = (res) => {
+    if (!res) return { percent: 0, text: 'Unknown', color: '#737685', bg: '#7376851a', status: 'Unverified' };
+    const isFake = res.status === 'fake';
+    const realProb = isFake ? (100 - res.score) : res.score;
     
     if (realProb >= 70) return { percent: realProb, text: 'High Credibility', color: '#0f9d58', bg: '#0f9d581a', status: 'Verified' };
     if (realProb >= 40) return { percent: realProb, text: 'Mixed Context', color: '#f4b400', bg: '#f4b4001a', status: 'Disputed' };
@@ -152,7 +152,7 @@ function App() {
               <div className="mb-xl">
                 <div className="flex flex-wrap items-center gap-sm mb-md">
                   {(() => {
-                    const scoreData = getScoreDisplay(result.ml_score);
+                    const scoreData = getScoreDisplay(result);
                     return (
                       <span className="px-3 py-1 rounded-full font-label-sm text-label-sm inline-flex items-center gap-1" style={{ backgroundColor: scoreData.bg, color: scoreData.color }}>
                         <span className="material-symbols-outlined text-[14px]">
@@ -176,7 +176,7 @@ function App() {
                   <h3 className="font-headline-sm text-headline-sm text-on-surface mb-lg w-full text-left">Verification Score</h3>
                   
                   {(() => {
-                    const scoreData = getScoreDisplay(result.ml_score);
+                    const scoreData = getScoreDisplay(result);
                     const strokeDasharray = `${scoreData.percent}, 100`;
                     return (
                       <>
@@ -202,7 +202,7 @@ function App() {
                   <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-lg hover:shadow-level-2 transition-shadow flex flex-col">
                     <div className="flex justify-between items-center mb-md">
                       <h3 className="font-headline-sm text-headline-sm text-on-surface">Source Map</h3>
-                      <span className="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-1 rounded">{result.scraped_context?.length || 0} Linked</span>
+                      <span className="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-1 rounded">{result.relatedLinks?.length || 0} Linked</span>
                     </div>
                     <div className="flex-1 bg-surface-container rounded border border-outline-variant relative overflow-hidden min-h-[200px] flex items-center justify-center">
                       <svg className="absolute inset-0" height="100%" viewBox="0 0 300 200" width="100%">
@@ -235,12 +235,12 @@ function App() {
                       <div className="h-4 w-full bg-surface-container rounded-full relative mb-6 border border-outline-variant overflow-hidden flex">
                         <div className="h-full w-1/2 bg-red-100 opacity-50"></div>
                         <div className="h-full w-1/2 bg-green-100 opacity-50"></div>
-                        <div className="absolute top-0 bottom-0 w-2 bg-primary-container z-10 -translate-x-1/2" style={{ left: `${100 - (result.ml_score?.fake_probability || 50)}%` }}></div>
+                        <div className="absolute top-0 bottom-0 w-2 bg-primary-container z-10 -translate-x-1/2" style={{ left: `${getScoreDisplay(result).percent}%` }}></div>
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-start gap-2">
                           <span className="material-symbols-outlined text-primary text-[18px] mt-0.5">psychology</span>
-                          <p className="font-body-sm text-body-sm text-on-surface">Text analyzed by local ML model.</p>
+                          <p className="font-body-sm text-body-sm text-on-surface">{result.analysis || "Text analyzed by local ML model."}</p>
                         </div>
                       </div>
                     </div>
@@ -252,11 +252,11 @@ function App() {
               <div className="mt-lg bg-surface-container-lowest border border-outline-variant rounded-lg p-lg">
                 <h3 className="font-headline-sm text-headline-sm text-on-surface mb-md">Scraped Evidence</h3>
                 
-                {(!result.scraped_context || result.scraped_context.length === 0) ? (
+                {(!result.relatedLinks || result.relatedLinks.length === 0) ? (
                   <p className="text-on-surface-variant">No direct sources found for this claim.</p>
                 ) : (
                   <div className="flex flex-col gap-unit">
-                    {result.scraped_context.map((item, index) => (
+                    {result.relatedLinks.map((item, index) => (
                       <div key={index} className="border border-outline-variant rounded bg-surface p-md hover:bg-surface-container-low transition-colors">
                         <div className="flex justify-between items-start">
                           <div className="flex gap-md items-start">
@@ -265,8 +265,8 @@ function App() {
                             </div>
                             <div>
                               <h4 className="font-label-md text-label-md text-on-surface mb-1">{item.title}</h4>
-                              <p className="font-body-sm text-body-sm text-on-surface-variant mb-2">{item.snippet}</p>
-                              <a href={item.link} target="_blank" rel="noreferrer" className="text-primary-container hover:underline text-sm font-semibold flex items-center gap-1">
+                              <p className="font-body-sm text-body-sm text-on-surface-variant mb-2">Verified via Google News ({result.matchedSources[index]})</p>
+                              <a href={item.url} target="_blank" rel="noreferrer" className="text-primary-container hover:underline text-sm font-semibold flex items-center gap-1">
                                 <span className="material-symbols-outlined text-[16px]">open_in_new</span> Read Full Source
                               </a>
                             </div>
