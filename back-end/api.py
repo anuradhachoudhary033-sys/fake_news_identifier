@@ -65,8 +65,18 @@ def verify_quote(req: QuoteRequest):
     # 2. Scrape for context
     context = scrape_news_context(req.quote)
     
+    frontend_status = "fake" if score_result["status"] == "Fake" else "true"
+    score = int(score_result["fake_probability"] if frontend_status == "fake" else score_result["real_probability"])
+    
+    relatedLinks = [{"title": item["title"], "url": item["link"]} for item in context]
+    matchedSources = [item["title"][:25] + "..." for item in context]
+    
+    analysis_text = f"ML Model Confidence: {score}%. " + (" ".join([c["snippet"] for c in context[:2]]) if context else "No additional context found.")
+    
     return {
-        "ml_score": score_result,
-        "scraped_context": context,
-        "analysis": "Combined verification complete."
+        "status": frontend_status,
+        "score": score,
+        "analysis": analysis_text,
+        "matchedSources": matchedSources,
+        "relatedLinks": relatedLinks
     }
