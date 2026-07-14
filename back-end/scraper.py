@@ -3,6 +3,14 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import re
 
+CREDIBLE_DOMAINS = [
+    "apnews.com", "reuters.com", "afp.com", "bbc.com", "bbc.co.uk",
+    "npr.org", "pbs.org", "economist.com", "dw.com", "aljazeera.com",
+    "thehindu.com", "indianexpress.com", "ptinews.com", "livemint.com",
+    "business-standard.com", "nytimes.com", "washingtonpost.com",
+    "wsj.com", "ft.com", "theguardian.com"
+]
+
 def scrape_news_context(quote):
     """
     Given a quote, extract keywords and search Google News RSS for context.
@@ -11,12 +19,14 @@ def scrape_news_context(quote):
     if not quote or not quote.strip():
         return []
     
-    # Extract keywords
     words = [w for w in re.findall(r'\w+', quote) if len(w) > 4]
     if not words:
         words = quote.split()[:5]
     
-    query = " ".join(words[:5])
+    # Prioritize credible sources in the search query
+    base_query = " ".join(words[:5])
+    sites_query = " OR ".join([f"site:{domain}" for domain in CREDIBLE_DOMAINS[:10]]) # Using top 10 to avoid query length limits
+    query = f"{base_query} ({sites_query})"
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
