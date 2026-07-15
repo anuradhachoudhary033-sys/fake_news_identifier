@@ -46,7 +46,11 @@ def scrape_news_context(quote):
         items = soup.find_all('item', limit=3)
         for item in items:
             title = item.title.text if item.title else "No Title"
-            link = item.link.text if item.link else "#"
+            
+            # html.parser treats <link> as void element, so text is in next_sibling
+            link_tag = item.find('link')
+            link = str(link_tag.next_sibling).strip() if link_tag and link_tag.next_sibling else "#"
+            
             # RSS descriptions often contain HTML, so we strip it
             desc_html = item.description.text if item.description else ""
             snippet = BeautifulSoup(desc_html, 'html.parser').get_text(strip=True)

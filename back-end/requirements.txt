@@ -1,8 +1,0 @@
-fastapi
-uvicorn
-scikit-learn
-pandas
-beautifulsoup4
-requests
-gradio
-joblib
